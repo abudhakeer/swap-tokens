@@ -1,11 +1,8 @@
-import Head from "next/head";
-import Image from "next/image";
-import styles from "../styles/Home.module.css";
-
 import Moralis from "moralis";
 import { useEffect } from "react";
 
 export default function Home() {
+  // Pass the app_id and server_url from moralis page.
   Moralis.initialize(process.env.NEXT_PUBLIC_MORALIS_APP_ID);
   Moralis.serverURL = process.env.NEXT_PUBLIC_MORALIS_SERVER_URL;
 
@@ -17,17 +14,24 @@ export default function Home() {
 
   async function initMoralis() {
     await Moralis.initPlugins();
+
+    // This is required to make 'Moralis.Web3API' calls. This along with
+    // the correspoding code can be removed if Web3API calls aren't required.
     await Moralis.start({
       serverUrl: process.env.NEXT_PUBLIC_MORALIS_SERVER_URL,
       appId: process.env.NEXT_PUBLIC_MORALIS_APP_ID,
     });
     dex = Moralis.Plugins.oneInch;
 
-    console.log("dex: ", dex);
+    const chains = await dex.getSupportedTokens({
+      chain: "eth",
+    });
 
-    const chains = await dex.getSupportedTokens({ chain: "eth" });
     console.log("chains: ", chains);
     const { tokens } = chains;
+
+    // This is to figure out the address of corresponding token. The 'chains' list
+    // can be used in the drop down component to avoid another search like this.
 
     for (const [k, v] of Object.entries(tokens)) {
       if (v.symbol === "BUSD") console.log("value: ", v);
@@ -38,15 +42,9 @@ export default function Home() {
 
     console.log("user: ", Moralis.User.current());
 
-    const options = {
-      chain: "0x1",
-      address: "0xC1d9dD2ea13984ef0E6223081F6DdEA90C4f0d45",
-    };
+    // To print the balance of all tokens owned by user
     const balances = await Moralis.Web3API.account.getTokenBalances();
     console.log("balances: ", balances);
-
-    const nbalance = await Moralis.Web3API.account.getNativeBalance();
-    console.log("nbalance: ", nbalance);
   }
 
   async function swap() {
